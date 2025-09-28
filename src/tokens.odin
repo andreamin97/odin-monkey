@@ -1,5 +1,6 @@
 package interpreter
 
+import "core:strconv"
 TokenType :: enum(u8) {
     ILLEGAL = 0,
     EOF,
@@ -55,6 +56,7 @@ NextCharacter :: proc(tokenizer: ^Tokenizer) {
 
 NextToken :: proc(tokenizer: ^Tokenizer) -> Token { 
     tok : Token
+    // Skip whitespace
     switch tokenizer.character {
         case '=': {tok = {.ASSIGN, "="}}
         case ';': {tok = {.SEMICOLON, ";"}}
@@ -65,8 +67,40 @@ NextToken :: proc(tokenizer: ^Tokenizer) -> Token {
         case '{': {tok = {.LBRACE, "{"}}
         case '}': {tok = {.RBRACE, "}"}}
         case 0:   {tok = {.EOF, ""}}
-        case:     {tok = { .ILLEGAL, ""}} 
+        // Handle letters
+        case:{
+            if IsLetter(tokenizer.character) {
+                // Read Identifier
+                ReadIdentifier(tokenizer)
+                // Lookup Identifier
+                    // separate keywords from identifiers
+            }
+            else if IsDigit(tokenizer.character) {
+                // Handle Digits
+            }
+            else {
+                // Not a recognized character, ILLEGAL
+                tok = { .ILLEGAL, ""}
+            }
+        } 
    }
    NextCharacter(tokenizer)
    return tok 
+}
+
+IsLetter :: proc(ch: byte) -> bool {
+    return false
+}
+
+IsDigit :: proc(ch: byte) -> bool {
+    return false
+}
+
+ReadIdentifier :: proc(tokenizer: ^Tokenizer) -> string {
+    pos := tokenizer.position
+    for IsLetter(tokenizer.character) {
+        NextCharacter(tokenizer)
+    }
+        
+    return tokenizer.input[pos:tokenizer.position]
 }
