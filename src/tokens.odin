@@ -11,6 +11,14 @@ TokenType :: enum (u8) {
 	// Operators
 	ASSIGN,
 	PLUS,
+	BANG,
+	MINUS,
+	SLASH,
+	ASTERISK,
+	LT,
+	GT,
+	EQ,
+	NOT_EQ,
 	// Delimiters
 	COMMA,
 	SEMICOLON,
@@ -21,6 +29,11 @@ TokenType :: enum (u8) {
 	//Keywords
 	FUNCTION,
 	LET,
+	TRUE,
+	FALSE,
+	IF,
+	ELSE,
+	RETURN,
 }
 
 Token :: struct {
@@ -31,7 +44,13 @@ Token :: struct {
 Keywords := map[string]TokenType {
 	"let" = .LET,
 	"fn"  = .FUNCTION,
+	"true" = .TRUE,
+	"false" = .FALSE,
+	"if" = .IF,
+	"else" = .ELSE,
+	"return" = .RETURN,
 }
+
 
 Tokenizer :: struct {
 	input:         string,
@@ -59,12 +78,27 @@ NextCharacter :: proc(tokenizer: ^Tokenizer) {
 	}
 }
 
+SkipWhitespace :: proc(tokenizer: ^Tokenizer) {
+	for tokenizer.character == ' ' \
+		|| tokenizer.character == '\t' \
+		|| tokenizer.character == '\n' \
+		|| tokenizer.character == '\r' {
+			NextCharacter(tokenizer)
+		}
+}
+
 NextToken :: proc(tokenizer: ^Tokenizer) -> Token {
 	tok: Token
-	// Skip whitespace
+	SkipWhitespace(tokenizer)
 	switch tokenizer.character {
 	case '=':
-		{tok = {.ASSIGN, "="}}
+		if PeekChar(tokenizer) == '=' {
+			NextCharacter(tokenizer)
+			tok = {.EQ, "=="}
+		}
+		else {
+			{tok = {.ASSIGN, "="}}
+		}
 	case ';':
 		{tok = {.SEMICOLON, ";"}}
 	case '(':
@@ -79,6 +113,24 @@ NextToken :: proc(tokenizer: ^Tokenizer) -> Token {
 		{tok = {.LBRACE, "{"}}
 	case '}':
 		{tok = {.RBRACE, "}"}}
+	case '!':
+		if PeekChar(tokenizer) == '=' {
+			NextCharacter(tokenizer)
+			tok = {.NOT_EQ, "!="}
+		}
+		else {
+			tok = {.BANG, "!"}
+		}
+	case '-':
+		{tok = {.MINUS, "-"}}
+	case '/':
+		{tok = {.SLASH, "/"}}
+	case '*':
+		{tok = {.ASTERISK, "*"}}
+	case '<':
+		{tok = {.LT, "<"}}
+	case '>':
+		{tok = {.GT, ">"}}
 	case 0:
 		{tok = {.EOF, ""}}
 	// Handle letters
@@ -92,6 +144,8 @@ NextToken :: proc(tokenizer: ^Tokenizer) -> Token {
 				return LookupIdentifier(ident)
 			} else if IsDigit(tokenizer.character) {
 				// Handle Digits
+				value := ReadInt(tokenizer)
+				return {.INT, value}
 			} else {
 				// Not a recognized character, ILLEGAL
 				tok = {.ILLEGAL, ""}
@@ -121,15 +175,20 @@ ReadIdentifier :: proc(tokenizer: ^Tokenizer) -> string {
 
 LookupIdentifier :: proc(ident: string) -> Token {
 	keyword, found := Keywords[ident]
-	if found {
-		#partial switch keyword {
-		case .LET:
-			{return Token{.LET, ""}}
-		case .FUNCTION:
-			{return Token{.FUNCTION, ""}}
-		case:
-			{return Token{.IDENT, ident}}
-		}
+	if found do return {keyword, ident}
+	
+	return Token{.IDENT, ident}
+}
+
+ReadInt :: proc(tokenizer: ^Tokenizer) -> string {
+	pos := tokenizer.position
+	for IsDigit(tokenizer.character) {
+		NextCharacter(tokenizer)
 	}
-	return {}
+	return tokenizer.input[pos:tokenizer.position]
+}
+
+PeekChar :: proc(tokenizer: ^Tokenizer) -> byte {
+	if tokenizer.position >= tokenizer.input_len do return 0
+	else do return tokenizer.input[tokenizer.read_position]
 }
