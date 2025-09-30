@@ -4,7 +4,7 @@ import "core:testing"
 import "core:fmt"
 
 @(test)
-TEST_NextToken :: proc(t: ^testing.T) {
+TEST_Tokenizer :: proc(t: ^testing.T) {
     input := `let five = 5;
             let ten = 10;
             let add = fn(x, y) {
@@ -111,4 +111,39 @@ TEST_NextToken :: proc(t: ^testing.T) {
         // fmt.println(tok)
     }
 
-    free_all(context.temp_allocator) }
+    free_all(context.temp_allocator) 
+}
+
+
+@(test)
+TEST_LetStatements :: proc(t: ^testing.T) {
+    input := `let x = 5;
+        let y = 10;
+        let foobar = 838383;
+    `
+
+    tokenizer := NewTokenizer(input, context.temp_allocator)
+    parser := NewParser(tokenizer)
+    program, ok := ParseProgram(&parser)
+
+    testing.expect(t, ok, "ParseProgram returned NIL")
+
+    msg := fmt.aprintln("Expected 3 statements, got {0}", len(program.Statements), context.temp_allocator)
+    testing.expect(t, len(program.Statements) == 3, msg)
+
+    test : []struct{identifier:string} = {
+        {"x"},
+        {"y"},
+        {"foobar"},
+    }
+
+    free_all(context.temp_allocator)
+}
+
+my_data: struct {
+    x: int,
+    y: int,
+} = {
+    x = 10,
+    y = 20,
+};

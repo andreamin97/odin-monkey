@@ -12,7 +12,7 @@ main :: proc() {
     context.allocator = virtual.arena_allocator(&arena)
     context.temp_allocator = context.allocator
     context.logger = log.create_console_logger()
-    
+
 	buf: [1024]byte
 	for {
 		fmt.printf(">> ")
@@ -31,5 +31,4 @@ main :: proc() {
 
 		free_all(context.temp_allocator)
 	}
-    
 }
